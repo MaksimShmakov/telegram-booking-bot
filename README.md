@@ -1,100 +1,49 @@
-# Telegram Booking Bot — Mini App
+# senler-salebot-metrics
 
-Telegram-бот с Mini App для записи на услуги (маникюр, педикюр).
+Ежедневный сбор метрик рассылок из **Senler (ВК)** и **Salebot (Telegram)** с привязкой заявок из **AmoCRM** (через Postgres) и выгрузкой в **Google Sheets**.
+
+## Что делает
+
+Каждое утро в 07:00 (Мск) скрипт:
+
+1. Идёт в Senler за рассылками всех ВК-каналов школы (15+ групп). Достаёт: отправлено / доставлено / прочитано / клики по «продажной» кнопке (по умолчанию — **«Узнать больше»**).
+2. Идёт в Salebot за рассылками всех TG-ботов (4 проекта × N ботов). Достаёт: отправлено / доставлено / прочитано.
+3. Тянет из **Postgres AmoCRM** заявки за дату с фильтром по источнику/тегу → раскладывает по рассылкам.
+4. Парсит классы (9–11) из названий рассылок.
+5. Пишет всё в Google Sheets идемпотентно (повторный запуск за ту же дату не дублирует строки).
 
 ## Структура
 
 ```
-telegram-booking-bot/
-├── backend/
-│   ├── main.py          # FastAPI сервер (API)
-│   ├── bot.py           # Telegram бот
-│   └── requirements.txt
-├── frontend/
-│   ├── index.html       # Mini App
-│   ├── style.css
-│   └── app.js
+senler-salebot-metrics/
+├── metrics/             # основной пакет
+│   ├── senler_client.py     # Senler API
+│   ├── salebot_client.py    # Salebot API
+│   ├── amo_db.py            # Postgres → заявки AmoCRM
+│   ├── classes.py           # парсер классов из названий
+│   ├── sheets.py            # gspread → Google Sheets
+│   ├── pipeline.py          # оркестрация: собрать → связать → записать
+│   ├── scheduler.py         # APScheduler, cron 07:00
+│   ├── channels.py          # справочник каналов и ботов
+│   └── config.py            # настройки из .env
+├── docs/
+│   └── PLAN.md          # план этапов, договорённости, открытые вопросы
+├── tests/
 ├── .env.example
+├── requirements.txt
 └── README.md
 ```
 
-## Как запустить
-
-### 1. Подготовка
+## Запуск (заглушка, в разработке)
 
 ```bash
-cd telegram-booking-bot
-
-# Создайте .env из примера
-cp .env.example .env
-```
-
-Заполните `.env`:
-- `BOT_TOKEN` — токен от [@BotFather](https://t.me/BotFather)
-- `ADMIN_CHAT_ID` — ваш Telegram user ID (узнать у [@userinfobot](https://t.me/userinfobot))
-- `WEBAPP_URL` — публичный URL фронтенда (см. шаг 4)
-
-### 2. Установка зависимостей
-
-```bash
-cd backend
+cp .env.example .env  # заполнить ключи
 pip install -r requirements.txt
+python -m metrics              # одноразовый прогон за вчерашний день
+python -m metrics --date 2026-05-12   # за конкретную дату
+python -m metrics --daemon     # запустить с планировщиком
 ```
 
-### 3. Запуск backend (API)
+## Этап разработки
 
-```bash
-# Из директории backend/
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-API будет доступен на `http://localhost:8000`.
-
-### 4. Запуск frontend
-
-Для локальной разработки:
-
-```bash
-# Из директории frontend/
-python -m http.server 8080
-```
-
-Frontend будет доступен на `http://localhost:8080`.
-
-**Важно:** Telegram Mini App требует HTTPS. Для тестирования используйте **ngrok**:
-
-```bash
-# Терминал 1: туннель для frontend
-ngrok http 8080
-# Скопируйте HTTPS URL (например: https://abc123.ngrok-free.app)
-
-# Терминал 2: туннель для backend
-ngrok http 8000
-```
-
-Затем:
-1. Пропишите ngrok URL фронтенда в `.env` → `WEBAPP_URL`
-2. В `frontend/app.js` замените `API_URL` на ngrok URL бэкенда
-
-### 5. Запуск бота
-
-```bash
-# Из директории backend/
-python bot.py
-```
-
-### 6. Тестирование
-
-1. Откройте бота в Telegram
-2. Отправьте `/start`
-3. Нажмите кнопку «Записаться»
-4. Выберите услугу → дату/время → подтвердите
-
-## API Endpoints
-
-| Метод | URL | Описание |
-|-------|-----|----------|
-| GET | `/api/services` | Список услуг |
-| GET | `/api/slots?service_id=1` | Доступные слоты |
-| POST | `/api/book` | Создать запись |
-| GET | `/api/bookings` | Все записи |
+Сейчас: **Этап 0** — каркас и доступы. См. `docs/PLAN.md`.

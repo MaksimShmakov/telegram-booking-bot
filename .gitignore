@@ -1,0 +1,12 @@
+.env
+.env.local
+*.pyc
+__pycache__/
+.pytest_cache/
+.venv/
+venv/
+.idea/
+.vscode/
+*.log
+google-credentials.json
+service-account*.json
