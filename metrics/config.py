@@ -5,7 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    senler_api_token: str = ""
+    senler_app_id: str = ""
+    senler_secret_key: str = ""
 
     salebot_token_project_1: str = ""
     salebot_token_project_2: str = ""

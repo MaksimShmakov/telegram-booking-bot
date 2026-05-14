@@ -16,8 +16,9 @@ class SenlerMailing:
 
 
 class SenlerClient:
-    def __init__(self, api_token: str):
-        self._token = api_token
+    def __init__(self, app_id: str, secret_key: str):
+        self._app_id = app_id
+        self._secret_key = secret_key
 
     async def fetch_mailings(self, day: date) -> list[SenlerMailing]:
         raise NotImplementedError("этап 1")
